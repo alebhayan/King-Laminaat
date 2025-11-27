@@ -1,1 +1,1 @@
-# Powergrid
+# King Laminaat: Store Management System
