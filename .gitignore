@@ -1,1 +1,44 @@
-test
+# Build results and binary files
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+*.pdb
+*.suo
+*.user
+*.userprefs
+*.log
+*.vspscc
+*.vssscc
+*.bak
+*.trc
+*.exe.config
+*.aps
+*.ncb
+*.user
+*.config.reshaper
+
+# Packages and dependencies
+**/packages/
+**/node_modules/
+**/bower_components/
+**/jspm_packages/
+.npm
+.nuget
+dist/
+
+# Visual Studio / Rider Files
+.vs/
+*.sln.docstates
+.idea/
+.DS_Store
+Thumbs.db
+
+# Database and Data Files
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Publish and Deployment
+**/publish/
