@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+		<PropertyGroup>
+			<RootNamespace>FSH.Modules.Multitenancy.Web</RootNamespace>
+			<AssemblyName>FSH.Modules.Multitenancy.Web</AssemblyName>
+		</PropertyGroup>
+
+</Project>

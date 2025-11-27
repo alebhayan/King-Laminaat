@@ -1,0 +1,67 @@
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+namespace FSH.Framework.Web.Health;
+
+public static class HealthEndpoints
+{
+    public sealed record HealthResult(string Status, IEnumerable<HealthEntry> Results);
+    public sealed record HealthEntry(string Name, string Status, string? Description, double DurationMs, Dictionary<string, object>? Details = default);
+    public static IEndpointRouteBuilder MapHeroHealthEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/health")
+                       .WithTags("Health")
+                       .AllowAnonymous()
+                       .DisableRateLimiting();
+
+
+        // Liveness: only process up (no external deps)
+        group.MapGet("/live",
+                async Task<Ok<HealthResult>> (HealthCheckService hc, CancellationToken cancellationToken) =>
+                {
+                    var report = await hc.CheckHealthAsync(_ => false, cancellationToken);
+                    var payload = new HealthResult(
+                    Status: report.Status.ToString(),
+                    Results: Array.Empty<HealthEntry>());
+
+                    return TypedResults.Ok(payload);
+                })
+                .WithName("Liveness")
+                .WithSummary("Quick process liveness probe.")
+                .WithDescription("Reports if the API process is alive. Does not check dependencies.")
+                .Produces<HealthResult>(StatusCodes.Status200OK);
+
+        // Readiness: includes DB (and any other registered checks)
+        group.MapGet("/ready",
+                    async Task<Results<Ok<HealthResult>, StatusCodeHttpResult>> (HealthCheckService hc, CancellationToken cancellationToken) =>
+                    {
+                        var report = await hc.CheckHealthAsync(cancellationToken: cancellationToken);
+                        var results = report.Entries.Select(e =>
+                    new HealthEntry(
+                        Name: e.Key,
+                        Status: e.Value.Status.ToString(),
+                        Description: e.Value.Description,
+                        DurationMs: e.Value.Duration.TotalMilliseconds,
+                        Details: e.Value.Data.ToDictionary(
+                            k => k.Key,
+                            v => v.Value is null ? "null" : v.Value
+                        )));
+
+                        var payload = new HealthResult(report.Status.ToString(), results);
+
+                        return report.Status == HealthStatus.Healthy
+                            ? TypedResults.Ok(payload)
+                            : TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+                    })
+                    .WithName("Readiness")
+                    .WithSummary("Readiness probe with database check.")
+                    .WithDescription("Returns 200 if all dependencies are healthy, otherwise 503.")
+                    .Produces<HealthResult>(StatusCodes.Status200OK)
+                    .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        return app;
+    }
+}

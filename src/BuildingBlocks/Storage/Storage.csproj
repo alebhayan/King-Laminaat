@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>FSH.Framework.Storage</RootNamespace>
+		<AssemblyName>FSH.Framework.Storage</AssemblyName>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Core\Core.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Folder Include="AWS\" />
+	</ItemGroup>
+	
+</Project>

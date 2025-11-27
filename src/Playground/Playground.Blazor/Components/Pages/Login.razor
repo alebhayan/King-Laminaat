@@ -1,0 +1,101 @@
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject ILogger<Login> Logger
+
+<MudContainer MaxWidth="MaxWidth.False"
+              Class="d-flex justify-center align-center"
+              Style="min-height:100vh; background-color:#F3F4F6;">
+    <MudPaper Class="pa-6" Elevation="1"
+              Style="max-width:420px; width:100%; background-color:#FFFFFF; border-radius:1rem; border:1px solid #E5E7EB;">
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.overline" Color="Color.Primary">FSH Playground</MudText>
+            <MudText Typo="Typo.h5">
+                Sign in
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mb-2" Color="Color.Secondary">
+                Use your FSH credentials for the <b>root</b> tenant.
+            </MudText>
+
+            <MudTextField @bind-Value="_email"
+                          Label="Email"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Class="mb-3" />
+
+            <MudTextField @bind-Value="_password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          OnKeyDown="HandleKeyDown" />
+
+            <MudTextField @bind-Value="_tenant"
+                          Label="Tenant"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          HelperText="Leave as &quot;root&quot; for the default tenant." />
+
+            <MudButton OnClick="LoginAsync"
+                       Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       Disabled="_isBusy"
+                       FullWidth="true"
+                       Class="mb-2">
+                @(_isBusy ? "Signing in..." : "Sign in")
+            </MudButton>
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                By signing in you agree to the environment and tenant configured for this playground instance.
+            </MudText>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _tenant = "root";
+    private bool _isBusy;
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !_isBusy)
+        {
+            await LoginAsync();
+        }
+    }
+
+    private async Task LoginAsync()
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        _isBusy = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            var uri = Navigation.ToAbsoluteUri("/auth/login");
+            var tenant = string.IsNullOrWhiteSpace(_tenant) ? "root" : _tenant.Trim();
+            var response = await client.PostAsJsonAsync(uri, new { Email = _email, Password = _password, Tenant = tenant });
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Logger.LogError("Login failed with status code {StatusCode} and error {Error}", response.StatusCode, error);
+                Snackbar.Add("Invalid credentials.", Severity.Error);
+            }
+            else
+            {
+                Navigation.NavigateTo("/?toast=login_success", true);
+            }
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+}

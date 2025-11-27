@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<RootNamespace>FSH.Framework.Blazor.UI</RootNamespace>
+		<AssemblyName>FSH.Framework.Blazor.UI</AssemblyName>
+	</PropertyGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="MudBlazor" />
+    <PackageReference Include="MudBlazor.ThemeManager" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+﻿@inherits FshComponentBase
+
+<MudDrawerHeader Class="px-4 py-3">
+    <MudText Typo="Typo.h6" Class="mt-1">
+        @Title
+    </MudText>
+</MudDrawerHeader>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Fsh Playground";
+}

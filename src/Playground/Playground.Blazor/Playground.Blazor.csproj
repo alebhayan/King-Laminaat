@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<RootNamespace>FSH.Playground.Blazor</RootNamespace>
+		<AssemblyName>FSH.Playground.Blazor</AssemblyName>
+
+		<!-- Container configuration -->
+		<ContainerPort>8080</ContainerPort>
+		<ContainerUser>root</ContainerUser>
+		<ContainerRepository>fsh-playground-blazor</ContainerRepository>
+    	<PublishProfile>DefaultContainer</PublishProfile>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\Blazor.UI\Blazor.UI.csproj" />
+  </ItemGroup>
+</Project>

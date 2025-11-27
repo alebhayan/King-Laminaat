@@ -1,0 +1,213 @@
+@inherits LayoutComponentBase
+@using FSH.Framework.Blazor.UI.Components.Button
+@using FSH.Framework.Blazor.UI.Components.Layouts
+@using FSH.Playground.Blazor.Components.Pages
+@using Microsoft.AspNetCore.WebUtilities
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@if (!_authStatusLoaded)
+{
+    <MudContainer MaxWidth="MaxWidth.False"
+                  Class="d-flex justify-center align-center"
+                  Style="min-height:100vh;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudContainer>
+}
+else if (!_isAuthenticated)
+{
+    <Login />
+}
+else
+{
+    <MudLayout>
+        <MudAppBar Elevation="0">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+            <MudSpacer />
+            <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+            <MudButton Color="Color.Inherit" Variant="Variant.Text" OnClick="LogoutAsync">
+                Logout
+            </MudButton>
+        </MudAppBar>
+        <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" Elevation="0">
+            <MudDrawerHeader>
+                <FshDrawerHeader Title="FSH Playground" />
+            </MudDrawerHeader>
+           <NavMenu />
+        </MudDrawer>
+        <MudMainContent Class="pt-20 pa-6">
+            @Body
+        </MudMainContent>
+    </MudLayout>
+}
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">??</span>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false;
+    private MudTheme? _theme = null;
+    private bool _authStatusLoaded;
+    private bool _isAuthenticated;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _theme = new()
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties(),
+            Typography = new Typography()
+            {
+                Default =
+                {
+                    FontFamily = new[] { "Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "\"Segoe UI\"", "sans-serif" },
+                    FontSize = "0.95rem",
+                    FontWeight = "400",
+                    LineHeight = "1.5",
+                    LetterSpacing = "0.02em"
+                }
+            }
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender && !_authStatusLoaded)
+        {
+            var client = HttpClientFactory.CreateClient();
+            var uri = Navigation.ToAbsoluteUri("/auth/status");
+
+            try
+            {
+                var response = await client.GetAsync(uri);
+                _isAuthenticated = response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                _isAuthenticated = false;
+            }
+
+            var currentUri = new Uri(Navigation.Uri);
+            var query = QueryHelpers.ParseQuery(currentUri.Query);
+            if (query.TryGetValue("toast", out var toastValues))
+            {
+                var toast = toastValues.ToString();
+                if (toast == "login_success")
+                {
+                    Snackbar.Add("Signed in.", Severity.Success);
+                }
+                else if (toast == "logout_success")
+                {
+                    Snackbar.Add("Signed out.", Severity.Success);
+                }
+
+                var cleanUri = currentUri.GetLeftPart(UriPartial.Path);
+                Navigation.NavigateTo(cleanUri, false);
+            }
+
+            _authStatusLoaded = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        var client = HttpClientFactory.CreateClient();
+        var uri = Navigation.ToAbsoluteUri("/auth/logout");
+        try
+        {
+            var response = await client.PostAsync(uri, content: null);
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/", false);
+                Snackbar.Add("Signed Out.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Sign out failed.", Severity.Error);
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Sign out failed.", Severity.Error);
+        }
+
+        _isAuthenticated = false;
+        _authStatusLoaded = true;
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Primary = "#111827",
+        Secondary = "#4B5563",
+        Surface = "#F9FAFB",
+        Background = "#F3F4F6",
+        AppbarText = "#111827",
+        AppbarBackground = "#F9FAFB",
+        DrawerBackground = "#FFFFFF",
+        TextPrimary = "#111827",
+        TextSecondary = "#4B5563",
+        GrayLight = "#E5E7EB",
+        GrayLighter = "#F3F4F6",
+    };
+
+    private readonly PaletteDark _darkPalette = new()
+    {
+        Primary = "#6366F1",
+        Secondary = "#9CA3AF",
+        Surface = "#020617",
+        Background = "#020617",
+        BackgroundGray = "#020617",
+        AppbarText = "#E5E7EB",
+        AppbarBackground = "#020617",
+        DrawerBackground = "#020617",
+        ActionDefault = "#9CA3AF",
+        ActionDisabled = "#4B5563",
+        ActionDisabledBackground = "#111827",
+        TextPrimary = "#F9FAFB",
+        TextSecondary = "#9CA3AF",
+        TextDisabled = "#4B5563",
+        DrawerIcon = "#9CA3AF",
+        DrawerText = "#E5E7EB",
+        GrayLight = "#1F2937",
+        GrayLighter = "#020617",
+        Info = "#38BDF8",
+        Success = "#22C55E",
+        Warning = "#F59E0B",
+        Error = "#EF4444",
+        LinesDefault = "#111827",
+        TableLines = "#111827",
+        Divider = "#111827",
+        OverlayLight = "#02061780",
+    };
+
+    public string DarkLightModeButtonIcon => _isDarkMode switch
+    {
+        true => Icons.Material.Rounded.AutoMode,
+        false => Icons.Material.Outlined.DarkMode,
+    };
+}
